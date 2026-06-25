@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rule Engine UI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Basic Reset & Font */
+        body {
+            font-family: 'Poppins', 'Google Sans', 'sans-serif';
+            margin: 0;
+            background: linear-gradient(90deg, #2b4a8b 0%, #3bb77e 100%);
+            min-height: 100vh;
+            display: flex; 
+            flex-direction: column;
+            align-items: center;
+            padding: 20px; 
+            box-sizing: border-box; 
+        }
+
+        /* Main Container */
+        .container {
+            width: 100%; 
+            max-width: 700px; 
+            margin: 100px auto 20px auto; /* Thay đổi dòng này */
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            padding: 32px;
+            box-sizing: border-box;
+        }
+
+        /* Headings */
+        h2, h3 {
+            color: #2b8a3e;
+            margin-top: 24px;
+            margin-bottom: 8px;
+        }
+
+        /* Preformatted Text (JSON/SQL Display) */
+        pre {
+            background: #f4f4f4;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            white-space: pre-wrap; /* Ensures long lines wrap */
+            word-break: break-all; /* Breaks words if necessary to fit */
+        }
+
+        /* Status Messages */
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .status.valid {
+            background: #e0ffe0;
+            color: #207520;
+        }
+        .status.warning {
+            background: #ffe0e0;
+            color: #a72020;
+            font-size: 14px;
+        }
+        .hidden {
+            display: none;
+        }
+        .result {
+            margin-top: 20px;
+        }
+
+        /* Buttons */
+        button {
+            padding: 10px 28px;
+            margin-top: 12px;
+            margin-bottom: 8px;
+            border: none;
+            border-radius: 24px;
+            background: linear-gradient(90deg, #2b4a8b 0%, #3bb77e 100%);
+            color: #fff;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-block; /* Ensure buttons behave well in layout */
+        }
+        button:disabled {
+            background: #b5b5b5;
+            color: #fff;
+            cursor: not-allowed;
+        }
+
+        /* Download Links */
+        #downloadLinks a {
+            display: inline-block;
+            margin: 6px 12px 6px 0;
+            padding: 8px 18px;
+            background: linear-gradient(90deg, #2b4a8b 0%, #3bb77e 100%);
+            color: #fff;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        #downloadLinks a:hover {
+            background: linear-gradient(90deg, #3bb77e 0%, #2b4a8b 100%);
+        }
+
+        /* File Input */
+        input[type="file"] {
+            margin-bottom: 4px;
+            width: 100%; /* Make file input responsive */
+            box-sizing: border-box;
+        }
+
+        /* Logo */
+        .logo-vpb {
+            position: absolute;
+            top: 12px;
+            left: 16px;
+            display: flex;
+            align-items: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .logo-vpb img {
+            height: 28px;
+            width: auto;
+            display: block;
+            pointer-events: auto;
+        }
+        .logo-title {
+            color: #fff;
+            font-size: 1.9rem;
+            font-weight: normal; /* Adjusted from 12 to normal for valid CSS */
+            margin-left: 16px;
+            font-family: 'Poppins', Arial, sans-serif;
+            letter-spacing: -1px;
+            pointer-events: auto;
+            text-transform: uppercase;
+        }
+
+        /* Validate Button Specific Styles */
+        button#validateBtn {
+            position: relative;
+            background: linear-gradient(90deg, #2b4a8b 0%, #3bb77e 100%);
+            color: #fff;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+            overflow: hidden;
+            border-radius: 24px; /* Consistent with ::before */
+        }
+
+        button#validateBtn:disabled {
+            background: #b5b5b5;
+            color: #fff;
+            cursor: not-allowed;
+        }
+
+        button#validateBtn:hover:enabled,
+        button#validateBtn:active:enabled {
+            background: #fff;
+            box-shadow: 0 2px 12px rgba(44, 62, 80, 0.15);
+            border: none;
+        }
+
+        button#validateBtn:hover:enabled::before,
+        button#validateBtn:active:enabled::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            padding: 2px;
+            background: linear-gradient(90deg, #2b4a8b 0%, #3bb77e 100%);
+            -webkit-mask:
+                linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* Text color change for gradient effect */
+        button#validateBtn:hover:enabled span,
+        button#validateBtn:active:enabled span {
+            background: linear-gradient(90deg, #2b4a8b 0%, #3bb77e 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+            z-index: 3;
+        }
+
+        button#validateBtn:active:enabled {
+            box-shadow: 0 1px 6px rgba(44, 62, 80, 0.10);
+            transform: translateY(1px) scale(0.98);
+        }
+        #resultBox {
+            display: none;
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 12px;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        #resultTable {
+            width: 100%;
+            table-layout: fixed;
+            word-wrap: break-word;
+            background: #fdfdfd;
+            border-collapse: collapse;
+        }
+
+        #resultTable th, #resultTable td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        #pagination button {
+            padding: 6px 12px;
+            border: none;
+            background: #2b4a8b;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 2px;
+            font-size: 14px;
+        }
+
+        #pagination button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+        /* Media Queries for Responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                margin: 80px auto 20px auto; /* Adjust top margin for smaller screens */
+                padding: 20px;
+            }
+            .logo-vpb {
+                top: 8px;
+                left: 8px;
+            }
+            .logo-vpb img {
+                height: 24px;
+            }
+            .logo-title {
+                font-size: 1.5rem;
+                margin-left: 10px;
+            }
+            h2, h3 {
+                font-size: 1.5rem;
+            }
+            button {
+                padding: 8px 20px;
+                font-size: 14px;
+            }
+            #downloadLinks a {
+                padding: 6px 14px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                margin: 60px auto 10px auto;
+                padding: 15px;
+            }
+            .logo-vpb {
+                position: static; /* Make logo static on very small screens */
+                justify-content: center;
+                margin-bottom: 20px;
+                pointer-events: auto; /* Allow interaction if static */
+            }
+            .logo-vpb img {
+                height: 20px;
+            }
+            .logo-title {
+                font-size: 1.2rem;
+                margin-left: 8px;
+            }
+            h2, h3 {
+                font-size: 1.3rem;
+            }
+            button {
+                width: 100%; /* Full width buttons on small screens */
+                margin-left: 0;
+                margin-right: 0;
+            }
+            #downloadLinks a {
+                width: calc(100% - 24px); /* Full width with padding */
+                margin-left: 0;
+                margin-right: 0;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-vpb">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="VPBank Logo" />
+        <span class="logo-title">| DATA ACCURACY TEST RULE ENGINE</span>
+    </div>
+    <div class="container">
+        <h2>Import Rule Engine</h2>
+        <!-- FE-01: Upload JSON file -->
+        <input type="file" id="ruleFile" accept=".json" />
+        <div id="fileError" class="status warning hidden"></div>
+
+        <!-- FE-02: Display readable JSON -->
+        <h2>Rule Content</h2>
+        <pre id="jsonContent">No file uploaded.</pre>
+
+        <!-- FE-03: Validate rule -->
+        <button id="validateBtn" disabled><span>Validate Rule</span></button>
+        <div id="validationResult" class="status hidden"></div>
+
+        <!-- FE-04: Run button -->
+        <button id="runBtn" class="hidden" disabled>Run</button>
+
+        <!-- FE-06: Real-time status -->
+        <div id="executionStatus" class="result"></div>
+
+        <!-- FE-07: Download result -->
+        <div id="downloadLinks" class="result"></div>
+        <!-- FE-08: Paginated result box -->
+        <div id="resultBox" class="result" style="display:none; margin-top:24px;">
+            <h3>Result Records</h3>
+            <table id="resultTable" style="width:100%; border-collapse:collapse; background:#f8f8f8; border-radius:8px;">
+                <thead>
+                    <tr style="background:#e0e0e0;">
+                        <th style="padding:8px; border-bottom:1px solid #ccc;">#</th>
+                        <th style="padding:8px; border-bottom:1px solid #ccc;">Status</th>
+                        <th style="padding:8px; border-bottom:1px solid #ccc;">Rule ID</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div id="pagination" style="margin-top:12px; text-align:center;"></div>
+        </div>
+    </div>
+
+    <script>
+        let ruleJson = null;
+        let validationPassed = false;
+        let executionId = null;
+        let pollInterval = null;
+
+        const ruleFile = document.getElementById('ruleFile');
+        const fileError = document.getElementById('fileError');
+        const jsonContent = document.getElementById('jsonContent');
+        const validateBtn = document.getElementById('validateBtn');
+        const validationResult = document.getElementById('validationResult');
+        const runBtn = document.getElementById('runBtn');
+        const executionStatus = document.getElementById('executionStatus');
+        const downloadLinks = document.getElementById('downloadLinks');
+        
+
+        // FE-01: Handle file upload
+        ruleFile.addEventListener('change', function() {
+            fileError.classList.add('hidden');
+            validationResult.classList.add('hidden');
+            runBtn.disabled = true;
+            runBtn.classList.add('hidden');
+            validateBtn.disabled = true;
+            jsonContent.textContent = 'No file uploaded.';
+            ruleJson = null;
+            validationPassed = false;
+            executionStatus.innerHTML = '';
+            downloadLinks.innerHTML = '';
+
+            // Clear any existing polling interval
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+
+            const file = ruleFile.files[0];
+            if (!file) return;
+
+            if (!file.name.endsWith('.json')) {
+                fileError.textContent = 'Please upload a .json file.';
+                fileError.classList.remove('hidden');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    ruleJson = JSON.parse(e.target.result);
+                    fileError.classList.add('hidden');
+                    jsonContent.textContent = JSON.stringify(ruleJson, null, 2);
+                    validateBtn.disabled = false;
+                } catch (err) {
+                    fileError.textContent = 'Invalid JSON file.';
+                    fileError.classList.remove('hidden');
+                    ruleJson = null;
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // FE-03: Validate rule via API
+        validateBtn.addEventListener('click', async function () {
+            validationResult.innerHTML = 'Validating...';
+            validationResult.className = 'status'; // Reset classes
+            validationResult.classList.remove('hidden');
+            validationResult.classList.remove('valid');
+            validationResult.classList.remove('warning');
+
+            runBtn.disabled = true;
+            runBtn.classList.add('hidden');
+            validationPassed = false;
+            executionStatus.innerHTML = '';
+            downloadLinks.innerHTML = '';
+
+            if (!ruleJson) return;
+
+            try {
+                const res = await fetch('/api/validate-rule', { // <-- Endpoint for validate-rule
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(ruleJson)
+                });
+
+                const contentType = res.headers.get("Content-Type") || "";
+                const text = await res.text();
+
+                if (!res.ok) {
+                    let errorMessage = `⚠️ Failed to generate SQL: ${res.statusText}`;
+                    if (contentType.includes("application/json")) {
+                        try {
+                            const errorData = JSON.parse(text);
+                            errorMessage = `⚠️ Failed to generate SQL: ${errorData.message || errorData.error || res.statusText}`;
+                        } catch (parseError) {
+                            // If it's not JSON, use the raw text
+                            errorMessage = `⚠️ Failed to generate SQL: ${text || res.statusText}`;
+                        }
+                    } else {
+                        errorMessage = `⚠️ Failed to generate SQL: ${text || res.statusText}`;
+                    }
+                    validationResult.innerHTML = errorMessage;
+                    validationResult.classList.add('warning');
+                    return;
+                }
+
+                if (contentType.includes("application/json")) {
+                    const data = JSON.parse(text);
+                    if (data.message) {
+                        throw new Error(data.message);
+                    }
+                    if (data.sql) { // Backend might return {sql: "..."} for success
+                        validationResult.innerHTML = '✅ Valid rule!<br><br>Generated SQL:';
+                        const sqlBlock = document.createElement('pre');
+                        sqlBlock.id = "generatedSQL";
+                        sqlBlock.textContent = data.sql;
+                        validationResult.appendChild(sqlBlock);
+                        validationResult.classList.add('valid');
+                        validationPassed = true;
+                        runBtn.disabled = false;
+                        runBtn.classList.remove('hidden');
+                        return;
+                    }
+                    throw new Error("Invalid rule or missing SQL in response.");
+                }
+
+                // If it's text/plain, assume it's valid SQL
+                validationResult.innerHTML = '✅ Valid rule!<br><br>Generated SQL:';
+                const sqlBlock = document.createElement('pre');
+                sqlBlock.id = "generatedSQL";
+                sqlBlock.textContent = text.trim() ? text : 'No SQL generated.';
+                validationResult.appendChild(sqlBlock);
+                validationResult.classList.add('valid');
+                validationPassed = true;
+                runBtn.disabled = false;
+                runBtn.classList.remove('hidden');
+
+            } catch (err) {
+                validationResult.innerHTML = `⚠️ Failed to generate SQL:<br>${err.message}`;
+                validationResult.classList.add('warning');
+            }
+        });
+
+        // FE-05: Submit rule to backend
+        runBtn.addEventListener('click', async function() {
+            if (!validationPassed || !ruleJson) return;
+            runBtn.disabled = true;
+            executionStatus.innerHTML = 'Submitting rule for execution...';
+            downloadLinks.innerHTML = '';
+
+            // Clear any existing polling interval
+            if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+            }
+
+            try {
+            const sql_text = document.getElementById('generatedSQL') ? document.getElementById('generatedSQL').textContent : '';
+            const res = await fetch('/api/run-rule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                rule: ruleJson,
+                sql_query: sql_text
+                })
+            });
+            const data = await res.json();
+
+            if (data.executionId) {
+                executionId = data.executionId;
+                pollExecutionStatus();
+            } else {
+                executionStatus.innerHTML = 'Failed to start execution: No executionId received.';
+                runBtn.disabled = false;
+            }
+            } catch (err) {
+            executionStatus.innerHTML = `Error submitting rule: ${err.message}`;
+            runBtn.disabled = false;
+            }
+        });
+        function renderPaginatedResults(records) {
+            const box = document.getElementById('resultBox');
+            const table = document.getElementById('resultTable').getElementsByTagName('tbody')[0];
+            const pagination = document.getElementById('pagination');
+
+            if (!records || !records.length) {
+                box.style.display = 'none';
+                return;
+            }
+
+            let currentPage = 1;
+            const pageSize = 100;
+            const totalPages = Math.ceil(records.length / pageSize);
+
+            function renderPage(page) {
+                table.innerHTML = '';
+                const start = (page - 1) * pageSize;
+                const end = Math.min(start + pageSize, records.length);
+
+                for (let i = start; i < end; i++) {
+                    const rec = records[i];
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style='padding:6px;border-bottom:1px solid #eee;'>${i + 1}</td>
+                        <td style='padding:6px;border-bottom:1px solid #eee;'>${rec.status || rec.violation || ''}</td>
+                        <td style='padding:6px;border-bottom:1px solid #eee;'>${rec.rule_id || ''}</td>
+                    `;
+                    table.appendChild(tr);
+                }
+
+                pagination.innerHTML = '';
+                const createButton = (label, onClick, disabled = false) => {
+                    const btn = document.createElement('button');
+                    btn.textContent = label;
+                    btn.disabled = disabled;
+                    btn.onclick = onClick;
+                    btn.style.margin = '0 4px';
+                    return btn;
+                };
+
+                pagination.appendChild(createButton('Prev', () => renderPage(currentPage - 1), currentPage === 1));
+                pagination.innerHTML += ` Page ${currentPage} / ${totalPages} `;
+                pagination.appendChild(createButton('Next', () => renderPage(currentPage + 1), currentPage === totalPages));
+
+                currentPage = page;
+            }
+
+            box.style.display = '';
+            renderPage(currentPage);
+        }
+
+        // FE-06: Poll for execution status (real-time progress, ETA, and summary)
+        let startTime = null;
+        function pollExecutionStatus() {
+            if (!executionId) return;
+            executionStatus.innerHTML = 'Processing...';
+            startTime = Date.now();
+
+            // Clear any existing interval before setting a new one
+            if (pollInterval) {
+            clearInterval(pollInterval);
+            }
+
+            pollInterval = setInterval(async () => {
+            try {
+                const res = await fetch(`/api/get-result?rule_id=${executionId}`);
+                const data = await res.json();
+
+                // 1. While processing: show real-time progress and ETA
+                if (data.status === 'PROCESSING') {
+                let progressHtml = '';
+                if (typeof data.processed === 'number' && typeof data.total === 'number') {
+                    progressHtml += `<div>Progress: <b>${data.processed}/${data.total}</b></div>`;
+                }
+                if (data.eta !== undefined) {
+                    progressHtml += `<div>ETA: ${data.eta} seconds</div>`;
+                } else if (data.time !== undefined) {
+                    progressHtml += `<div>ETA: ${data.time} seconds</div>`;
+                }
+                executionStatus.innerHTML = progressHtml;
+                return;
+                }
+
+                // 2. After finished: show only total time, total pass and violations
+                if (data.status === 'PASS' || data.status === 'FAIL') {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+                    const totalTime = ((Date.now() - startTime) / 1000).toFixed(2);
+                    let summaryHtml = `
+                        <div><b>Execution Finished</b></div>
+                        <div>Total Time: <b>${totalTime} seconds</b></div>
+                        <div>Violations: <b>${data.violations || 0}</b></div>
+                        <div style="color: green;">Total Pass: <b>${data.total_passed || 0}</b></div>
+                    `;
+                    executionStatus.innerHTML = summaryHtml;
+                    showDownloadLinks(data.download_link ? [{ name: 'Result File', url: data.download_link }] : []);
+                    // Hiển thị bảng kết quả nếu có
+                    if (Array.isArray(data.records) && data.records.length > 0) {
+                        renderPaginatedResults(data.records);
+                    } else {
+                        document.getElementById('resultBox').style.display = 'none';
+                    }
+                    runBtn.disabled = false;
+                    return;
+                }
+
+                // Error state
+                if (data.status === 'error') {
+                executionStatus.innerHTML = `<div style="color:red;">Error: ${data.message || 'Unknown error'}</div>`;
+                clearInterval(pollInterval);
+                pollInterval = null;
+                runBtn.disabled = false;
+                return;
+                }
+            } catch (err) {
+                executionStatus.innerHTML = `Error fetching status: ${err.message}`;
+                clearInterval(pollInterval);
+                pollInterval = null;
+                runBtn.disabled = false;
+            }
+            }, 2000);
+        }
+
+        // FE-07: Show download links
+        function showDownloadLinks(files) {
+            if (!files.length) {
+                downloadLinks.innerHTML = '';
+                return;
+            }
+            let html = '<h4>Download Results:</h4>';
+            files.forEach(file => {
+                html += `<a href="${file.url}" download>${file.name}</a><br>`;
+            });
+            downloadLinks.innerHTML = html;
+        }
+
+        // Scroll to top on load (optional, can be removed)
+        window.addEventListener('load', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    </script>
+
+</body>
+</html>
